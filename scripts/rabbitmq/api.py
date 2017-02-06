@@ -56,6 +56,33 @@ class RabbitMQAPI(object):
                     break
         return queues
 
+    def list_exchanges(self, filters=None):
+        '''
+        List all the RabbitMQ Exchanges, filtered against the filters provided
+        in .rab.auth. See README.md for more information.
+        '''
+        exchanges = []
+        if not filters:
+            filters = [{}]
+        try:
+            for exch in self.call_api('exchanges'):
+                logging.debug("Discovered exchange: " + exch['name'] + ", checking to see if it's filtered...")
+                for _filter in filters:
+                    check = [(x, y) for x, y in exch.items() if x in _filter]
+                    shared_items = set(_filter.items()).intersection(check)
+                    if len(shared_items) == len(_filter):
+                        element = {'{#VHOSTNAME}': exch['vhost'],
+                                   '{#EXCHANGENAME}': exch['name']}
+                        exchanges.append(element)
+                        logging.debug('Discovered exchange ' + exch['vhost'] + '/' + exch['name'])
+                        break
+            return exchanges
+        except urllib2.HTTPError as err:
+            if err.code == 404:
+                return exchanges
+            else:
+                raise err
+            
     def list_shovels(self, filters=None):
         '''
         List all of the RabbitMQ shovels, filtered against the filters provided
