@@ -148,6 +148,31 @@ class RabbitMQAPI(object):
         os.unlink(rdatafile.name)
         return return_code
 
+    def check_exchange(self, filters=None):
+        '''Return the value for a specific item in an exchange's details.'''
+        return_code = 0
+        if not filters:
+            filters = [{}]
+
+        rdatafile = tempfile.NamedTemporaryFile(delete=False)
+
+        for exch in self.call_api('exchanges'):
+            success = False
+            logging.debug("Filtering out by " + str(filters))
+            for _filter in filters:
+                check = [(x, y) for x, y in exch.items() if x in _filter]
+                shared_items = set(_filter.items()).intersection(check)
+                if len(shared_items) == len(_filter):
+                    success = True
+                    break
+            if success:
+                self._prepare_data(exch, rdatafile)
+
+        rdatafile.close()
+        return_code = self._send_data(rdatafile)
+        os.unlink(rdatafile.name)
+        return return_code
+
     def check_shovel(self, filters=None):
         '''Return the value for a specific item in a shovel's details.'''
         return_code = 0
@@ -242,7 +267,7 @@ class RabbitMQAPI(object):
 
 def main():
     '''Command-line parameters and decoding for Zabbix use/consumption.'''
-    choices = ['list_queues', 'list_exchanges', 'list_shovels', 'list_nodes', 'queues', 'shovels', 'check_aliveness',
+    choices = ['list_queues', 'list_exchanges', 'list_shovels', 'list_nodes', 'queues', 'shovels', 'exchanges', 'check_aliveness',
                'server']
     parser = optparse.OptionParser()
     parser.add_option('--username', help='RabbitMQ API username',
@@ -292,6 +317,8 @@ def main():
         print api.check_queue(filters)
     elif options.check == 'shovels':
         print api.check_shovel(filters)
+    elif options.check == 'exchanges':
+        print api.check_exchange(filters)
     elif options.check == 'check_aliveness':
         print api.check_aliveness()
     elif options.check == 'server':
