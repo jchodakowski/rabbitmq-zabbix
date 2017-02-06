@@ -242,7 +242,7 @@ class RabbitMQAPI(object):
 
 def main():
     '''Command-line parameters and decoding for Zabbix use/consumption.'''
-    choices = ['list_queues', 'list_shovels', 'list_nodes', 'queues', 'shovels', 'check_aliveness',
+    choices = ['list_queues', 'list_exchanges', 'list_shovels', 'list_nodes', 'queues', 'shovels', 'check_aliveness',
                'server']
     parser = optparse.OptionParser()
     parser.add_option('--username', help='RabbitMQ API username',
@@ -282,6 +282,8 @@ def main():
         filters = [filters]
     if options.check == 'list_queues':
         print json.dumps({'data': api.list_queues(filters)})
+    elif options.check == 'list_exchanges':
+        print json.dumps({'data': api.list_exchanges(filters)})
     elif options.check == 'list_nodes':
         print json.dumps({'data': api.list_nodes()})
     elif options.check == 'list_shovels':
